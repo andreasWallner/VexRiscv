@@ -9,7 +9,7 @@ import spinal.core.sim._
 import vexriscv.demo.{Murax, MuraxConfig}
 import javax.swing._
 
-import spinal.lib.com.jtag.sim.JtagTcp
+import spinal.lib.com.jtag.sim.{JtagTcp, JtagVpi}
 import spinal.lib.com.uart.sim.{UartDecoder, UartEncoder}
 import vexriscv.test.{JLedArray, JSwitchArray}
 
@@ -22,7 +22,7 @@ object MuraxSim {
 //    def config = MuraxConfig.default.copy(onChipRamSize = 256 kB)
     def config = MuraxConfig.default(withXip = false).copy(onChipRamSize = 4 kB, onChipRamHexFile = "src/main/ressource/hex/muraxDemo.hex")
     val simSlowDown = false
-    SimConfig.allOptimisation.compile(new Murax(config)).doSimUntilVoid{dut =>
+    SimConfig.withVcdWave.withWaveDepth(0).compile(new Murax(config)).doSimUntilVoid{dut =>
       val mainClkPeriod = (1e12/dut.config.coreFrequency.toDouble).toLong
       val jtagClkPeriod = mainClkPeriod*4
       val uartBaudRate = 115200
@@ -32,10 +32,11 @@ object MuraxSim {
       clockDomain.forkStimulus(mainClkPeriod)
 //      clockDomain.forkSimSpeedPrinter(2)
 
-      val tcpJtag = JtagTcp(
-        jtag = dut.io.jtag,
-        jtagClkPeriod = jtagClkPeriod
-      )
+      //val tcpJtag = JtagTcp(
+      //  jtag = dut.io.jtag,
+      //  jtagClkPeriod = jtagClkPeriod
+      //)
+      val jtagvpi = JtagVpi(dut.io.jtag, jtagClkPeriod=((12 MHz) / 8).toTime)
 
       val uartTx = UartDecoder(
         uartPin = dut.io.uart.txd,
